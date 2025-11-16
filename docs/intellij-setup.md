@@ -30,7 +30,12 @@ This guide provides step-by-step instructions for configuring the MODSIM III Lan
 
    **Command**: Select "Raw command"
 
-   **Command line**:
+   **Command line** (Windows):
+   ```
+   npx.cmd modsim-language-server --stdio
+   ```
+
+   **Command line** (macOS/Linux):
    ```
    npx modsim-language-server --stdio
    ```
@@ -113,24 +118,26 @@ For basic syntax highlighting before the LSP server starts:
    ```bash
    node --version
    ```
-2. Test the language server manually:
+2. **On Windows, use `npx.cmd` instead of `npx`** in the command line configuration
+3. Test the language server manually:
    ```bash
    npx modsim-language-server --stdio
    ```
    Type something and press Enter - you should see JSON-RPC messages
-3. Check IntelliJ's event log (**Help → Show Log in Explorer/Finder**)
-4. Restart IntelliJ IDEA
+4. Check IntelliJ's event log (**Help → Show Log in Explorer/Finder**)
+5. Restart IntelliJ IDEA
 
 ### LSP plugin errors in event log
 
 **Symptoms**: Errors mentioning "LSP" or "Language Server" in the event log
 
 **Solutions**:
-1. Update the LSP Support plugin to the latest version
-2. Try using absolute path to npx:
+1. **On Windows, ensure you use `npx.cmd` not just `npx`**
+2. Update the LSP Support plugin to the latest version
+3. Try using absolute path to npx:
    - Windows: `C:\Program Files\nodejs\npx.cmd modsim-language-server --stdio`
    - macOS/Linux: `/usr/local/bin/npx modsim-language-server --stdio`
-3. Use global installation instead:
+4. Use global installation instead:
    ```bash
    npm install -g modsim-language-server
    ```
@@ -180,6 +187,13 @@ To add custom arguments to the language server:
 1. Go to **File → Settings → Languages & Frameworks → Language Server Protocol → Server Definitions**
 2. Edit your MODSIM server definition
 3. Modify command line, e.g.:
+
+   Windows:
+   ```
+   npx.cmd modsim-language-server --stdio --log-level=debug
+   ```
+
+   macOS/Linux:
    ```
    npx modsim-language-server --stdio --log-level=debug
    ```
