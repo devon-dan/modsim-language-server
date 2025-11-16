@@ -215,7 +215,7 @@ documents.onDidOpen(async (event) => {
     connection.console.log(`Auto-discovered workspace root: ${workspaceRoot}`);
 
     try {
-      await workspaceManager.initialize([workspaceRoot]);
+      await workspaceManager.initialize([workspaceRoot], (msg) => connection.console.log(msg));
       workspaceIndexed = true;
       connection.console.log(`Workspace indexing completed successfully`);
     } catch (error: any) {
