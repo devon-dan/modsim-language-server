@@ -8,8 +8,8 @@
     "modsim-language-server": "bin/modsim-language-server"
   },
   "scripts": {
-    "build": "npx tsc -p .",
-    "watch": "npx tsc -w -p .",
+    "build": "node node_modules/typescript/bin/tsc -p .",
+    "watch": "node node_modules/typescript/bin/tsc -w -p .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
