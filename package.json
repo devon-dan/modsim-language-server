@@ -1,6 +1,6 @@
 {
   "name": "modsim-language-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Language Server Protocol implementation for MODSIM III",
   "main": "dist/server.js",
   "types": "dist/server.d.ts",
