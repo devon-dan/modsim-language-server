@@ -58,26 +58,35 @@ export class WorkspaceManager {
 
     this.indexing = true;
     logInfo('Starting workspace indexing...');
+    logInfo(`Workspace roots: ${this.workspaceRoots.join(', ')}`);
 
     try {
       const modFiles: string[] = [];
 
       // Find all .mod files
       for (const root of this.workspaceRoots) {
+        logInfo(`Scanning directory: ${root}`);
         const files = await this.findModFiles(root);
+        logInfo(`Found ${files.length} .mod files in ${root}`);
         modFiles.push(...files);
       }
 
-      logInfo(`Found ${modFiles.length} .mod files in workspace`);
+      logInfo(`Total: Found ${modFiles.length} .mod files in workspace`);
 
       // Parse all files in parallel (first pass - no cross-file resolution yet)
       const parsePromises = modFiles.map((file) => this.indexFile(file));
       await Promise.all(parsePromises);
 
       // Second pass - resolve imports and build global symbol table
+      logInfo('Resolving imports and building global symbol table...');
       await this.resolveImports();
 
       logInfo(`Workspace indexing complete: ${this.documents.size} documents indexed`);
+      logInfo(`Module name mappings: ${this.moduleNameToUri.size} modules`);
+
+      // Log first 10 module names for debugging
+      const moduleNames = Array.from(this.moduleNameToUri.keys()).slice(0, 10);
+      logInfo(`Sample modules: ${moduleNames.join(', ')}${this.moduleNameToUri.size > 10 ? '...' : ''}`);
     } catch (error: any) {
       logError('Error during workspace indexing', { error: error.message });
     } finally {

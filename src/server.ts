@@ -213,8 +213,15 @@ documents.onDidOpen(async (event) => {
 
     logInfo(`Auto-discovered workspace root: ${workspaceRoot}`);
     connection.console.log(`Auto-discovered workspace root: ${workspaceRoot}`);
-    await workspaceManager.initialize([workspaceRoot]);
-    workspaceIndexed = true;
+
+    try {
+      await workspaceManager.initialize([workspaceRoot]);
+      workspaceIndexed = true;
+      connection.console.log(`Workspace indexing completed successfully`);
+    } catch (error: any) {
+      logError(`Workspace initialization failed: ${error.message}`);
+      connection.console.log(`Workspace initialization failed: ${error.message}`);
+    }
   }
 
   await validateTextDocument(event.document);
