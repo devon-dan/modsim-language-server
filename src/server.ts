@@ -60,6 +60,7 @@ const documentStates = new Map<string, DocumentState>();
 // Server capabilities
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
+let workspaceIndexed = false;
 // let hasDiagnosticRelatedInformationCapability = false;
 
 /**
@@ -145,12 +146,10 @@ connection.onInitialized(async () => {
     logInfo(`Initializing workspace with folders: ${workspaceRoots.join(', ')}`);
     await workspaceManager.initialize(workspaceRoots);
     logInfo(`Workspace initialized with ${workspaceRoots.length} folder(s)`);
+    workspaceIndexed = true;
   } else {
-    // Fallback: use current working directory if no workspace folders provided
-    logWarn('No workspace folders provided by client, using current working directory');
-    const cwd = process.cwd();
-    logInfo(`Initializing workspace with CWD: ${cwd}`);
-    await workspaceManager.initialize([cwd]);
+    // Don't index on startup - wait for first document to open
+    logWarn('No workspace folders provided by client, will auto-discover on first document open');
   }
 
   if (hasWorkspaceFolderCapability) {
@@ -179,6 +178,45 @@ connection.onDidChangeConfiguration((_change) => {
 documents.onDidOpen(async (event) => {
   connection.console.log(`Document opened: ${event.document.uri}`);
   logInfo(`Document opened: ${event.document.uri}`);
+
+  // Auto-discover workspace from first opened document
+  if (!workspaceIndexed) {
+    const { URI } = require('vscode-uri');
+    const filePath = URI.parse(event.document.uri).fsPath;
+    const dir = require('path').dirname(filePath);
+
+    // Try to find workspace root (go up until we find a parent with .mod files or hit root)
+    let workspaceRoot = dir;
+    let currentDir = dir;
+    const pathModule = require('path');
+    const fsModule = require('fs');
+
+    // Check if parent directories have more .mod files (likely the workspace root)
+    while (true) {
+      const parent = pathModule.dirname(currentDir);
+      if (parent === currentDir) break; // Hit filesystem root
+
+      // Check if parent has .mod files
+      try {
+        const entries = fsModule.readdirSync(parent);
+        const hasModFiles = entries.some((e: string) => e.endsWith('.mod'));
+        if (hasModFiles) {
+          workspaceRoot = parent;
+          currentDir = parent;
+        } else {
+          break; // No more .mod files, we've found the root
+        }
+      } catch {
+        break;
+      }
+    }
+
+    logInfo(`Auto-discovered workspace root: ${workspaceRoot}`);
+    connection.console.log(`Auto-discovered workspace root: ${workspaceRoot}`);
+    await workspaceManager.initialize([workspaceRoot]);
+    workspaceIndexed = true;
+  }
+
   await validateTextDocument(event.document);
 });
 
