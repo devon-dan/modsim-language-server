@@ -5,7 +5,7 @@ A high-performance Language Server Protocol (LSP) implementation for the MODSIM 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Test Coverage](https://img.shields.io/badge/coverage-96.4%25-brightgreen.svg)]()
 [![RAMS Parse Rate](https://img.shields.io/badge/RAMS%20parse-94.0%25-brightgreen.svg)]()
-[![npm version](https://img.shields.io/badge/npm-v0.1.6-blue.svg)]()
+[![npm version](https://img.shields.io/badge/npm-v0.1.7-blue.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Overview

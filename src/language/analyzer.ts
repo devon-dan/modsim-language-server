@@ -81,10 +81,18 @@ export class SemanticAnalyzer {
   };
   private usedSymbols: Set<string> = new Set();
   private declaredSymbols: DeclaredSymbol[][] = []; // Stack of scopes
+  private workspaceResolver?: (moduleName: string) => SymbolTable | undefined;
 
   constructor() {
     this.symbolTable = new SymbolTable();
     this.initializeBuiltins();
+  }
+
+  /**
+   * Set workspace symbol resolver for cross-file symbol lookup
+   */
+  public setWorkspaceResolver(resolver: (moduleName: string) => SymbolTable | undefined): void {
+    this.workspaceResolver = resolver;
   }
 
   /**
@@ -228,17 +236,45 @@ export class SemanticAnalyzer {
    */
   private analyzeImports(module: Module): void {
     for (const importStmt of module.imports) {
-      // TODO: Validate that imported modules exist
-      // For now, just add imported symbols to current scope
-      for (const symbol of importStmt.symbols) {
-        // Create placeholder symbol for imported entity
-        const importedSymbol: AnySymbol = {
-          name: symbol.name,
-          kind: SymbolKind.VAR, // Unknown kind - could be type, const, proc, etc.
-          type: { kind: TypeKind.UNKNOWN },
-          declaration: importStmt.start,
-        };
-        this.symbolTable.define(importedSymbol);
+      // Use workspace resolver to get symbols from imported module
+      if (this.workspaceResolver && importStmt.moduleName) {
+        const importedModuleSymbols = this.workspaceResolver(importStmt.moduleName);
+
+        if (importedModuleSymbols) {
+          // Import the requested symbols from the module
+          for (const symbolImport of importStmt.symbols) {
+            const symbol = importedModuleSymbols.lookup(symbolImport.name);
+            if (symbol) {
+              // Add imported symbol to current scope
+              this.symbolTable.define(symbol);
+            } else {
+              // Symbol not found in imported module
+              this.error(
+                `Symbol '${symbolImport.name}' not found in module '${importStmt.moduleName}'`,
+                importStmt.start,
+                importStmt.end
+              );
+            }
+          }
+        } else {
+          // Module not found in workspace
+          this.error(
+            `Module '${importStmt.moduleName}' not found`,
+            importStmt.start,
+            importStmt.end
+          );
+        }
+      } else {
+        // No workspace resolver - create placeholder symbols
+        for (const symbol of importStmt.symbols) {
+          const importedSymbol: AnySymbol = {
+            name: symbol.name,
+            kind: SymbolKind.VAR,
+            type: { kind: TypeKind.UNKNOWN },
+            declaration: importStmt.start,
+          };
+          this.symbolTable.define(importedSymbol);
+        }
       }
     }
   }
