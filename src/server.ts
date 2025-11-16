@@ -276,18 +276,18 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     const analyzer = new SemanticAnalyzer();
 
     // Provide workspace symbol resolver to analyzer
-    const workspaceDocument = workspaceManager.getDocument(uri);
-    if (workspaceDocument) {
-      // Analyzer can access workspace symbols through the workspace manager
-      analyzer.setWorkspaceResolver((moduleName: string) => {
-        const moduleUri = workspaceManager.resolveModule(moduleName);
-        if (moduleUri) {
-          const doc = workspaceManager.getDocument(moduleUri);
-          return doc?.symbolTable;
-        }
-        return undefined;
-      });
-    }
+    analyzer.setWorkspaceResolver((moduleName: string) => {
+      connection.console.log(`Looking up module: ${moduleName}`);
+      const moduleUri = workspaceManager.resolveModule(moduleName);
+      if (moduleUri) {
+        connection.console.log(`Found module ${moduleName} at ${moduleUri}`);
+        const doc = workspaceManager.getDocument(moduleUri);
+        return doc?.symbolTable;
+      } else {
+        connection.console.log(`Module ${moduleName} not found in workspace`);
+      }
+      return undefined;
+    });
 
     const analyzerDiagnostics = analyzer.analyze(ast);
 
