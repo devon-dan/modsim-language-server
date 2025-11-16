@@ -1,0 +1,67 @@
+{
+  "name": "modsim-language-server",
+  "version": "0.1.0",
+  "description": "Language Server Protocol implementation for MODSIM III",
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "bin": {
+    "modsim-language-server": "bin/modsim-language-server"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+    "dev": "npm run build && node dist/cli.js --stdio",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "modsim",
+    "modsim-iii",
+    "language-server",
+    "lsp",
+    "language-server-protocol",
+    "ide",
+    "intellisense",
+    "code-completion"
+  ],
+  "author": "RAMS Development Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "vscode-languageserver": "^8.1.0",
+    "vscode-languageserver-textdocument": "^1.0.8",
+    "vscode-uri": "^3.0.7",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rams-project/modsim-language-server"
+  }
+}
