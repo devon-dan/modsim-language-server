@@ -33,7 +33,7 @@ export class WorkspaceManager {
   private documents = new Map<string, WorkspaceDocument>();
   private globalSymbolTable = new SymbolTable();
   private workspaceRoots: string[] = [];
-  private moduleNameToUri = new Map<string, string>();
+  private moduleNameToUri = new Map<string, string[]>(); // Map module name to array of URIs
   private indexing = false;
 
   /**
@@ -184,9 +184,12 @@ export class WorkspaceManager {
 
       this.documents.set(uri, doc);
 
-      // Map module name to URI
+      // Map module name to URI(s) for quick lookup
+      // Multiple files can have same module name (DEFINITION and IMPLEMENTATION)
       if (moduleName) {
-        this.moduleNameToUri.set(moduleName, uri);
+        const existingUris = this.moduleNameToUri.get(moduleName) || [];
+        existingUris.push(uri);
+        this.moduleNameToUri.set(moduleName, existingUris);
         logDebug(`Indexed module ${moduleName} from ${filePath}`);
       } else {
         logWarn(`Module at ${filePath} has no name`);
@@ -226,7 +229,7 @@ export class WorkspaceManager {
       const imports = this.extractImports(doc.ast);
 
       for (const importName of imports) {
-        const importedUri = this.moduleNameToUri.get(importName);
+        const importedUri = this.resolveModule(importName);
         if (importedUri) {
           // Record dependency
           doc.dependencies.add(importedUri);
@@ -398,7 +401,11 @@ export class WorkspaceManager {
 
       // Update module name mapping
       if (ast.name) {
-        this.moduleNameToUri.set(ast.name, uri);
+        const existingUris = this.moduleNameToUri.get(ast.name) || [];
+        if (!existingUris.includes(uri)) {
+          existingUris.push(uri);
+        }
+        this.moduleNameToUri.set(ast.name, existingUris);
       }
 
       // Re-resolve imports for this document and its dependents
@@ -435,7 +442,7 @@ export class WorkspaceManager {
     const imports = this.extractImports(doc.ast);
 
     for (const importName of imports) {
-      const importedUri = this.moduleNameToUri.get(importName);
+      const importedUri = this.resolveModule(importName);
       if (importedUri) {
         doc.dependencies.add(importedUri);
 
@@ -514,7 +521,23 @@ export class WorkspaceManager {
    * Resolve a module name to a URI
    */
   resolveModule(moduleName: string): string | undefined {
-    return this.moduleNameToUri.get(moduleName);
+    const uris = this.moduleNameToUri.get(moduleName);
+    if (!uris || uris.length === 0) {
+      return undefined;
+    }
+
+    // If multiple modules with same name, prefer DEFINITION over IMPLEMENTATION
+    if (uris.length > 1) {
+      for (const uri of uris) {
+        const doc = this.documents.get(uri);
+        if (doc?.ast?.kind === 'DEFINITION') {
+          return uri;
+        }
+      }
+    }
+
+    // Return first URI if no DEFINITION found
+    return uris[0];
   }
 
   /**
