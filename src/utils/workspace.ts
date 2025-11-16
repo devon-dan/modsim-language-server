@@ -44,8 +44,20 @@ export class WorkspaceManager {
     logInfo(`Initializing workspace with ${workspaceFolders.length} root folder(s)`);
     if (consoleLog) consoleLog(`Initializing workspace with ${workspaceFolders.length} root folder(s)`);
 
+    // Clear existing state
+    this.documents.clear();
+    this.moduleNameToUri.clear();
+    this.globalSymbolTable = new SymbolTable();
+
     // Index all .mod files in workspace
     await this.indexWorkspace(consoleLog);
+  }
+
+  /**
+   * Get current workspace roots
+   */
+  getWorkspaceRoots(): string[] {
+    return this.workspaceRoots;
   }
 
   /**

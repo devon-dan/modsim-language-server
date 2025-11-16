@@ -60,7 +60,6 @@ const documentStates = new Map<string, DocumentState>();
 // Server capabilities
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
-let workspaceIndexed = false;
 // let hasDiagnosticRelatedInformationCapability = false;
 
 /**
@@ -146,7 +145,6 @@ connection.onInitialized(async () => {
     logInfo(`Initializing workspace with folders: ${workspaceRoots.join(', ')}`);
     await workspaceManager.initialize(workspaceRoots);
     logInfo(`Workspace initialized with ${workspaceRoots.length} folder(s)`);
-    workspaceIndexed = true;
   } else {
     // Don't index on startup - wait for first document to open
     logWarn('No workspace folders provided by client, will auto-discover on first document open');
@@ -179,17 +177,28 @@ documents.onDidOpen(async (event) => {
   connection.console.log(`Document opened: ${event.document.uri}`);
   logInfo(`Document opened: ${event.document.uri}`);
 
-  // Auto-discover workspace from first opened document
-  if (!workspaceIndexed) {
-    const { URI } = require('vscode-uri');
-    const filePath = URI.parse(event.document.uri).fsPath;
-    const dir = require('path').dirname(filePath);
+  // Check if we need to index/re-index workspace based on opened file
+  const { URI } = require('vscode-uri');
+  const filePath = URI.parse(event.document.uri).fsPath;
+  const fileDir = require('path').dirname(filePath);
 
-    // Try to find workspace root (go up until we find a parent with .mod files or hit root)
-    let workspaceRoot = dir;
-    let currentDir = dir;
+  // Check if opened file is within any indexed workspace root
+  const workspaceRoots = workspaceManager.getWorkspaceRoots();
+  const isFileInWorkspace = workspaceRoots.some((root: string) =>
+    filePath.startsWith(root) || fileDir.startsWith(root)
+  );
+
+  connection.console.log(`File in workspace: ${isFileInWorkspace}, Current roots: ${workspaceRoots.join(', ')}`);
+
+  // If file is not in workspace OR no workspace indexed yet, auto-discover and index
+  if (!isFileInWorkspace) {
+    connection.console.log(`File ${filePath} not in current workspace, auto-discovering...`);
     const pathModule = require('path');
     const fsModule = require('fs');
+
+    // Try to find workspace root (go up until we find a parent with .mod files or hit root)
+    let workspaceRoot = fileDir;
+    let currentDir = fileDir;
 
     // Check if parent directories have more .mod files (likely the workspace root)
     while (true) {
@@ -216,7 +225,6 @@ documents.onDidOpen(async (event) => {
 
     try {
       await workspaceManager.initialize([workspaceRoot], (msg) => connection.console.log(msg));
-      workspaceIndexed = true;
       connection.console.log(`Workspace indexing completed successfully`);
     } catch (error: any) {
       logError(`Workspace initialization failed: ${error.message}`);
