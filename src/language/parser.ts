@@ -1091,6 +1091,11 @@ export class Parser {
    * Parse a type name - accepts IDENTIFIER or built-in type keywords
    */
   private parseTypeName(): string {
+    // Handle optional # prefix for replacement types in PROTO derivations
+    // Example: ASK METHOD Foo (IN x : #MyType)
+    // The # indicates this type parameter can be replaced in derived objects
+    const hasHashPrefix = this.match(TokenType.HASH);
+
     // Accept built-in type keywords
     if (
       this.match(
@@ -1110,6 +1115,9 @@ export class Parser {
       return this.previous().value;
     }
 
+    if (hasHashPrefix) {
+      return this.error('Expected type name after #');
+    }
     return this.error('Expected type name');
   }
 
@@ -1236,8 +1244,13 @@ export class Parser {
           this.consume(TokenType.COLON, 'Expected colon in type parameter');
           // Replacement type may start with # for further derivation (replaceable type in PROTO objects)
           // Syntax: ANYOBJ:#TypeName means TypeName can be replaced in future derivations
-          this.match(TokenType.HASH); // Optional # prefix
-          this.consumeIdentifierOrKeyword('Expected replacement type');
+          if (this.match(TokenType.HASH)) {
+            // # prefix found, consume the type name after it
+            this.consumeIdentifierOrKeyword('Expected replacement type after #');
+          } else {
+            // No # prefix, just consume the type name
+            this.consumeIdentifierOrKeyword('Expected replacement type');
+          }
         } while (this.match(TokenType.COMMA)); // Handle multiple substitutions
         this.consume(TokenType.RBRACKET, 'Expected ]');
         // For now, store the base type name without parameters (AST doesn't track them yet)
@@ -1253,7 +1266,12 @@ export class Parser {
         if (this.match(TokenType.LBRACKET)) {
           this.consumeIdentifierOrKeyword('Expected parameter name'); // parameter name (can be keyword like ANYOBJ)
           this.consume(TokenType.COLON, 'Expected colon in type parameter');
-          this.consumeIdentifierOrKeyword('Expected replacement type');
+          // Handle optional # prefix for replacement types
+          if (this.match(TokenType.HASH)) {
+            this.consumeIdentifierOrKeyword('Expected replacement type after #');
+          } else {
+            this.consumeIdentifierOrKeyword('Expected replacement type');
+          }
           this.consume(TokenType.RBRACKET, 'Expected ]');
         }
 
@@ -1448,8 +1466,13 @@ export class Parser {
           this.consume(TokenType.COLON, 'Expected colon in type parameter');
           // Replacement type may start with # for further derivation (replaceable type in PROTO objects)
           // Syntax: ANYOBJ:#TypeName means TypeName can be replaced in future derivations
-          this.match(TokenType.HASH); // Optional # prefix
-          this.consumeIdentifierOrKeyword('Expected replacement type');
+          if (this.match(TokenType.HASH)) {
+            // # prefix found, consume the type name after it
+            this.consumeIdentifierOrKeyword('Expected replacement type after #');
+          } else {
+            // No # prefix, just consume the type name
+            this.consumeIdentifierOrKeyword('Expected replacement type');
+          }
         } while (this.match(TokenType.COMMA)); // Handle multiple substitutions
         this.consume(TokenType.RBRACKET, 'Expected ]');
         // For now, store the base type name without parameters (AST doesn't track them yet)
@@ -1465,7 +1488,12 @@ export class Parser {
         if (this.match(TokenType.LBRACKET)) {
           this.consumeIdentifierOrKeyword('Expected parameter name'); // parameter name (can be keyword like ANYOBJ)
           this.consume(TokenType.COLON, 'Expected colon in type parameter');
-          this.consumeIdentifierOrKeyword('Expected replacement type');
+          // Handle optional # prefix for replacement types
+          if (this.match(TokenType.HASH)) {
+            this.consumeIdentifierOrKeyword('Expected replacement type after #');
+          } else {
+            this.consumeIdentifierOrKeyword('Expected replacement type');
+          }
           this.consume(TokenType.RBRACKET, 'Expected ]');
         }
 
