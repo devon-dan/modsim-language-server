@@ -35,7 +35,7 @@ import { getCodeActions } from './features/codeAction';
 import { prepareRename, getRename } from './features/rename';
 import { getDocumentHighlights } from './features/documentHighlight';
 import { getFoldingRanges } from './features/foldingRanges';
-import { initLogger, logInfo, logError } from './utils/logging';
+import { initLogger, logInfo, logError, logWarn } from './utils/logging';
 import { WorkspaceManager } from './utils/workspace';
 
 // Create connection using all proposed features
@@ -130,20 +130,30 @@ connection.onInitialized(async () => {
     connection.client.register(DidChangeConfigurationNotification.type, undefined);
   }
 
-  if (hasWorkspaceFolderCapability) {
-    // Initialize workspace with workspace folders
-    const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-    if (workspaceFolders && workspaceFolders.length > 0) {
-      const workspaceRoots = workspaceFolders.map((folder) => {
-        // Convert URI to file path
-        const uri = folder.uri;
-        // Simple URI to path conversion (assumes file:// URIs)
-        return uri.replace(/^file:\/\//, '');
-      });
+  // Initialize workspace with workspace folders
+  const workspaceFolders = hasWorkspaceFolderCapability
+    ? await connection.workspace.getWorkspaceFolders()
+    : null;
 
-      await workspaceManager.initialize(workspaceRoots);
-      logInfo(`Workspace initialized with ${workspaceRoots.length} folder(s)`);
-    }
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    const workspaceRoots = workspaceFolders.map((folder) => {
+      // Convert URI to file path using vscode-uri
+      const { URI } = require('vscode-uri');
+      return URI.parse(folder.uri).fsPath;
+    });
+
+    logInfo(`Initializing workspace with folders: ${workspaceRoots.join(', ')}`);
+    await workspaceManager.initialize(workspaceRoots);
+    logInfo(`Workspace initialized with ${workspaceRoots.length} folder(s)`);
+  } else {
+    // Fallback: use current working directory if no workspace folders provided
+    logWarn('No workspace folders provided by client, using current working directory');
+    const cwd = process.cwd();
+    logInfo(`Initializing workspace with CWD: ${cwd}`);
+    await workspaceManager.initialize([cwd]);
+  }
+
+  if (hasWorkspaceFolderCapability) {
 
     connection.workspace.onDidChangeWorkspaceFolders((_event) => {
       connection.console.log('Workspace folder change event received.');
