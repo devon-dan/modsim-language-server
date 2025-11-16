@@ -194,19 +194,21 @@ describe('Lexer', () => {
       expect(tokens[0].value).toBe('Hello World');
     });
 
-    it('should handle escape sequences in strings', () => {
+    it('should handle backslash as regular character in strings', () => {
       const lexer = new Lexer('"Line 1\\nLine 2\\tTab"');
       const tokens = lexer.tokenize();
 
       expect(tokens[0].type).toBe(TokenType.STRING_LITERAL);
-      expect(tokens[0].value).toBe('Line 1\nLine 2\tTab');
+      // MODSIM doesn't process escape sequences - backslash is literal
+      expect(tokens[0].value).toBe('Line 1\\nLine 2\\tTab');
     });
 
-    it('should handle escaped quotes in strings', () => {
-      const lexer = new Lexer('"Say \\"Hello\\""');
+    it('should handle doubled quotes in strings', () => {
+      const lexer = new Lexer('"Say ""Hello"""');
       const tokens = lexer.tokenize();
 
       expect(tokens[0].type).toBe(TokenType.STRING_LITERAL);
+      // MODSIM uses "" for embedded quote
       expect(tokens[0].value).toBe('Say "Hello"');
     });
 
@@ -228,12 +230,22 @@ describe('Lexer', () => {
       expect(tokens[0].value).toBe('A');
     });
 
-    it('should handle escape sequences in characters', () => {
-      const lexer = new Lexer("'\\n'");
+    it('should handle backslash as regular character', () => {
+      const lexer = new Lexer("'\\'");
       const tokens = lexer.tokenize();
 
       expect(tokens[0].type).toBe(TokenType.CHAR_LITERAL);
-      expect(tokens[0].value).toBe('\n');
+      // MODSIM treats backslash as regular character
+      expect(tokens[0].value).toBe('\\');
+    });
+
+    it('should handle apostrophe character with four apostrophes', () => {
+      const lexer = new Lexer("''''");
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0].type).toBe(TokenType.CHAR_LITERAL);
+      // MODSIM uses '''' to represent single apostrophe
+      expect(tokens[0].value).toBe("'");
     });
   });
 

@@ -2126,10 +2126,21 @@ export class Parser {
     const waitType = this.match(TokenType.DURATION) ? 'DURATION' : this.error('Expected DURATION or FOR');
     const expression = this.parseExpression();
 
-    // Optional semicolon after expression (for empty body case)
-    this.match(TokenType.SEMICOLON);
+    // Check if this is a simple WAIT statement (terminated by semicolon)
+    if (this.match(TokenType.SEMICOLON)) {
+      // Simple WAIT DURATION expr; statement - no body, no END WAIT
+      return {
+        type: 'WaitStatement',
+        waitType,
+        expression,
+        body: [],
+        onInterrupt: undefined,
+        start,
+        end: this.previous().end,
+      };
+    }
 
-    // WAIT DURATION can also have body and ON INTERRUPT
+    // WAIT DURATION can also have body and ON INTERRUPT (compound form)
     const body: Statement[] = [];
     while (!this.check(TokenType.ON) && !this.check(TokenType.END) && !this.isAtEnd()) {
       body.push(this.parseStatement());
