@@ -243,7 +243,9 @@ export class SemanticAnalyzer {
         if (importedModuleSymbols) {
           // Import the requested symbols from the module
           for (const symbolImport of importStmt.symbols) {
-            const symbol = importedModuleSymbols.lookup(symbolImport.name);
+            // Use lookupGlobal() because after analysis completes, currentScope
+            // has exited the MODULE scope where symbols were defined
+            const symbol = importedModuleSymbols.lookupGlobal(symbolImport.name);
             if (symbol) {
               // Add imported symbol to current scope
               this.symbolTable.define(symbol);

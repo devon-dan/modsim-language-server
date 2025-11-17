@@ -259,6 +259,41 @@ export class SymbolTable {
   }
 
   /**
+   * Lookup a symbol starting from global scope
+   * This is useful for cross-module lookups after analysis completes
+   * and currentScope may have exited the module scope
+   *
+   * This searches the global scope AND all its children recursively,
+   * because module-level symbols are defined in MODULE child scopes
+   */
+  lookupGlobal(name: string): AnySymbol | undefined {
+    // First try direct lookup from globalScope (includes builtins and module symbols)
+    const directLookup = this.globalScope.lookup(name);
+    if (directLookup) {
+      return directLookup;
+    }
+
+    // If not found, search all child scopes recursively
+    const searchInScope = (scope: Scope): AnySymbol | undefined => {
+      // Check this scope's local symbols
+      const symbol = scope.lookupLocal(name);
+      if (symbol) {
+        return symbol;
+      }
+      // Recursively search children
+      for (const child of scope.children) {
+        const found = searchInScope(child);
+        if (found) {
+          return found;
+        }
+      }
+      return undefined;
+    };
+
+    return searchInScope(this.globalScope);
+  }
+
+  /**
    * Get a scope by name
    */
   getScope(name: string): Scope | undefined {

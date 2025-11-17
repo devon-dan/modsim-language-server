@@ -288,6 +288,13 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
             const symbols = doc.symbolTable.getAllSymbols();
             connection.console.log(`  SymbolTable exists with ${symbols.length} symbols`);
             connection.console.log(`  Symbol names: ${symbols.map(s => s.name).join(', ')}`);
+            // Test lookup
+            const testSymbol = doc.symbolTable.lookup('BTreeIdObj');
+            connection.console.log(`  Test lookup('BTreeIdObj'): ${testSymbol ? 'FOUND' : 'NOT FOUND'}`);
+            if (!testSymbol && moduleName === 'GrpId') {
+              connection.console.log(`  Current scope kind: ${(doc.symbolTable as any).currentScope?.kind}`);
+              connection.console.log(`  Global scope symbols: ${(doc.symbolTable as any).globalScope?.getSymbols().map((s: any) => s.name).join(', ')}`);
+            }
           } else {
             connection.console.log(`  SymbolTable is undefined!`);
           }
