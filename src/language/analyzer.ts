@@ -130,6 +130,22 @@ export class SemanticAnalyzer {
     };
     this.symbolTable.globalScope.define(moduleSymbol);
 
+    // For IMPLEMENTATION modules, automatically import all symbols from corresponding DEFINITION module
+    if (module.kind === 'IMPLEMENTATION' && this.workspaceResolver) {
+      const defModuleSymbols = this.workspaceResolver(module.name);
+      if (defModuleSymbols) {
+        // Import all symbols from the DEFINITION module
+        const allSymbols = defModuleSymbols.getAllSymbols();
+        for (const symbol of allSymbols) {
+          // Skip built-in types and the module symbol itself
+          const builtins = ['INTEGER', 'REAL', 'BOOLEAN', 'STRING', 'CHAR', 'NUMBER', 'ANYOBJ'];
+          if (!builtins.includes(symbol.name) && symbol.name !== module.name) {
+            this.symbolTable.define(symbol);
+          }
+        }
+      }
+    }
+
     // Process imports
     this.analyzeImports(module);
 
@@ -596,12 +612,16 @@ export class SemanticAnalyzer {
       }
 
       // If OVERRIDE keyword but not found in base, error
+      // Exception: ObjInit and ObjTerminate are implicit methods all objects inherit
       if (!foundInBase && method.isOverride) {
-        this.error(
-          `Method '${method.name}' is marked with OVERRIDE but does not override any base class method`,
-          method.start,
-          method.end
-        );
+        const implicitMethods = ['ObjInit', 'ObjTerminate'];
+        if (!implicitMethods.includes(method.name)) {
+          this.error(
+            `Method '${method.name}' is marked with OVERRIDE but does not override any base class method`,
+            method.start,
+            method.end
+          );
+        }
       }
     } else if (method.isOverride) {
       // OVERRIDE keyword used but no base types
@@ -1086,11 +1106,15 @@ export class SemanticAnalyzer {
       // Check if this is an override
       const isOverriding = methods.has(method.name);
       if (method.isOverride && !isOverriding) {
-        this.error(
-          `Method '${method.name}' is marked as OVERRIDE but does not override any base method`,
-          method.start,
-          method.end
-        );
+        // ObjInit and ObjTerminate are implicit methods all objects inherit
+        const implicitMethods = ['ObjInit', 'ObjTerminate'];
+        if (!implicitMethods.includes(method.name)) {
+          this.error(
+            `Method '${method.name}' is marked as OVERRIDE but does not override any base method`,
+            method.start,
+            method.end
+          );
+        }
       } else if (!method.isOverride && isOverriding) {
         this.error(
           `Method '${method.name}' overrides a base method but is not marked with OVERRIDE`,
