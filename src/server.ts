@@ -282,7 +282,19 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       if (moduleUri) {
         connection.console.log(`Found module ${moduleName} at ${moduleUri}`);
         const doc = workspaceManager.getDocument(moduleUri);
-        return doc?.symbolTable;
+        if (doc) {
+          connection.console.log(`  Document exists for ${moduleName}`);
+          if (doc.symbolTable) {
+            const symbols = doc.symbolTable.getAllSymbols();
+            connection.console.log(`  SymbolTable exists with ${symbols.length} symbols`);
+            connection.console.log(`  Symbol names: ${symbols.map(s => s.name).join(', ')}`);
+          } else {
+            connection.console.log(`  SymbolTable is undefined!`);
+          }
+          return doc.symbolTable;
+        } else {
+          connection.console.log(`  Document not found for URI ${moduleUri}`);
+        }
       } else {
         connection.console.log(`Module ${moduleName} not found in workspace`);
       }
