@@ -10,6 +10,7 @@ export enum TypeKind {
   STRING = 'STRING',
   CHAR = 'CHAR',
   NUMBER = 'NUMBER', // Union of INTEGER and REAL
+  ANYOBJ = 'ANYOBJ', // Universal object type
   ARRAY = 'ARRAY',
   RECORD = 'RECORD',
   OBJECT = 'OBJECT',
@@ -29,7 +30,7 @@ export interface Type {
 
 // Primitive types
 export interface PrimitiveType extends Type {
-  kind: TypeKind.INTEGER | TypeKind.REAL | TypeKind.BOOLEAN | TypeKind.STRING | TypeKind.CHAR | TypeKind.NUMBER;
+  kind: TypeKind.INTEGER | TypeKind.REAL | TypeKind.BOOLEAN | TypeKind.STRING | TypeKind.CHAR | TypeKind.NUMBER | TypeKind.ANYOBJ;
 }
 
 // Array type
@@ -131,6 +132,7 @@ export const BUILTIN_TYPES: Map<string, Type> = new Map([
   ['STRING', { kind: TypeKind.STRING, name: 'STRING' }],
   ['CHAR', { kind: TypeKind.CHAR, name: 'CHAR' }],
   ['NUMBER', { kind: TypeKind.NUMBER, name: 'NUMBER' }],
+  ['ANYOBJ', { kind: TypeKind.ANYOBJ, name: 'ANYOBJ' }],
 ]);
 
 // NIL types
